@@ -1,0 +1,116 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+enum TransactionStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  firstName String? // The '?' makes this field optional
+  lastName  String? // The '?' makes this field optional
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  services  Service[]
+  messages  Message[]     
+  conversations Conversation[]
+  purchases Transaction[]
+
+  reviews   Review[]  
+}
+model Service {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  price       Float
+
+  location    Unsupported("Geometry(Point, 4326)")? 
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // This creates the relationship to the User model
+  author    User     @relation(fields: [authorId], references: [id])
+  authorId  Int
+  transactions Transaction[]
+  
+  reviews      Review[]
+}
+// Add these two models to the end of your schema.prisma file
+
+model Conversation {
+  id        Int       @id @default(autoincrement())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // A conversation can have many messages
+  messages  Message[]
+  // A conversation can have many users (participants)
+  users     User[]
+}
+
+model Message {
+  id             Int          @id @default(autoincrement())
+  body           String
+  createdAt      DateTime     @default(now())
+
+  // Relation to the Conversation model
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  conversationId Int
+
+  // Relation to the User model (the sender)
+  sender         User         @relation(fields: [senderId], references: [id])
+  senderId       Int
+}
+// Add this new model to your schema
+
+model Transaction {
+  id        Int      @id @default(autoincrement())
+  tx_ref    String   @unique
+  amount    Float
+  currency  String   @default("ETB") // It's good practice to add the default here
+  status    TransactionStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationships
+  
+  // --- CORRECTED RELATIONSHIP ---
+  // This transaction was made by a "buyer"
+  buyer     User     @relation(fields: [buyerId], references: [id])
+  buyerId   Int
+  
+  // This transaction is for a specific "service"
+  service   Service  @relation(fields: [serviceId], references: [id])
+  serviceId Int
+}
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Int      // e.g., a number from 1 to 5
+  comment   String?  // The text of the review (optional)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relation to the Service that was reviewed
+  service   Service @relation(fields: [serviceId], references: [id])
+  serviceId Int
+
+  // Relation to the User who wrote the review
+  author    User    @relation(fields: [authorId], references: [id])
+  authorId  Int
+}

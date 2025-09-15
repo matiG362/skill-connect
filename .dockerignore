@@ -1,0 +1,11 @@
+# .dockerignore
+node_modules
+.git
+.idea
+.vscode
+dist
+packages/api/dist
+packages/web/dist
+packages/mobile/android
+packages/mobile/ios
+*.log

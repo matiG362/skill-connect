@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgis/postgis:15-3.4
+    container_name: skillconnect_db_container
+    restart: always
+    environment:
+      POSTGRES_USER: postgres          # You can change this
+      POSTGRES_PASSWORD: mysecretpassword # CHANGE THIS in production!
+      POSTGRES_DB: skillconnect_db     # The name of our database
+    ports:
+      - "5433:5432" # Maps port 5432 on your machine to port 5432 in the container
+    volumes:
+      - db_data:/var/lib/postgresql/data # This line makes sure our data persists
+
+volumes:
+  db_data: # This defines the volume used in the line above
