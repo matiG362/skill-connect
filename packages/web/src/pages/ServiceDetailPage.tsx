@@ -29,7 +29,7 @@ export const ServiceDetailPage = () => {
   const [service, setService] = useState<Service | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [reviews, setReviews] = useState<any[]>([]); 
+  const [reviews, setReviews] = useState<Review[]>([]); 
 
   // --- THIS IS THE CORRECTED PART ---
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);

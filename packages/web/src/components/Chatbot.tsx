@@ -91,16 +91,25 @@ export const Chatbot = () => {
       
       <ScrollArea style={{ flex: 1 }} type="auto">
         {messages.map((msg, index) => (
-          <Box key={index} mb="sm">
-            <Text
+          // --- THIS IS THE CORRECTED PART ---
+          <Box
+            key={index}
+            mb="sm"
+            style={{
+              display: 'flex',
+              justifyContent: msg.sender === 'user' ? 'flex-end' : 'flex-start',
+            }}
+          >
+            <Paper
               p="xs"
               radius="md"
+              withBorder
               bg={msg.sender === 'bot' ? 'gray.1' : 'blue.5'}
               c={msg.sender === 'bot' ? 'black' : 'white'}
-              style={{ float: msg.sender === 'user' ? 'right' : 'left', clear: 'both', maxWidth: '80%' }}
+              style={{ maxWidth: '80%' }}
             >
-              {msg.text}
-            </Text>
+              <Text>{msg.text}</Text>
+            </Paper>
           </Box>
         ))}
         {loading && <Text size="sm" c="dimmed">Bot is typing...</Text>}

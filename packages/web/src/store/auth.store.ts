@@ -1,7 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { jwtDecode } from 'jwt-decode';
-interface User { sub: number; email: string; }
+interface User {
+  sub: number;
+  email: string;
+  firstName?: string; // Add optional firstName
+  lastName?: string;  // Add optional lastName
+}
 interface AuthState { token: string | null; user: User | null; isAuthenticated: boolean; }
 interface AuthActions { setToken: (token: string) => void; clearAuth: () => void; }
 const initialState: AuthState = { token: null, user: null, isAuthenticated: false };
