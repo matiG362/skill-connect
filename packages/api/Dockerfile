@@ -1,53 +1,44 @@
-# ---- Base Stage ----
-FROM node:20-slim AS base
+# ---- Builder Stage ----
+# This stage installs all dependencies and builds the TypeScript code
+FROM node:20-slim AS builder
 WORKDIR /app
 RUN npm install -g pnpm
 
-# ---- Dependencies Stage ----
-FROM base AS deps
-WORKDIR /app
-# Copy all package.json files and the lockfile
-COPY pnpm-lock.yaml ./
-COPY package.json ./
+# Copy all package manifests and the lockfile
+COPY package.json pnpm-lock.yaml ./
 COPY packages/api/package.json ./packages/api/
-# You would add other packages here if they were dependencies of the api
-# COPY packages/common/package.json ./packages/common/
+# If api depended on other workspace packages, you would copy their package.json here too
 
-# Install ONLY production dependencies for the entire workspace
-RUN pnpm install --prod --frozen-lockfile
-
-# ---- Builder Stage ----
-FROM base AS builder
-WORKDIR /app
-# Copy all package.json files and the lockfile again
-COPY pnpm-lock.yaml ./
-COPY package.json ./
-COPY packages/api/package.json ./packages/api/
-
-# Install ALL dependencies (including devDependencies)
+# Install ALL dependencies needed for the build
 RUN pnpm install --frozen-lockfile
 
-# Copy the source code
+# Copy the rest of the source code
 COPY . .
 
-# Generate Prisma Client
+# Run Prisma generate and the build command for the 'api' package
 RUN pnpm --filter api exec prisma generate
-# Build the API
 RUN pnpm --filter api build
 
-# ---- Production Runner Stage ----
-FROM base AS runner
+# ---- Production Pruner Stage ----
+# This stage will remove all devDependencies
+FROM builder AS pruner
+WORKDIR /app
+RUN pnpm prune --prod
+
+# ---- Final Production Runner Stage ----
+FROM node:20-slim AS runner
 WORKDIR /app
 
-# Copy the production node_modules from the 'deps' stage
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/packages/api/node_modules ./packages/api/node_modules
+# Copy the pruned, production-only node_modules from the 'pruner' stage
+COPY --from=pruner /app/node_modules ./node_modules
 
-# Copy the built application from the 'builder' stage
+# Copy the built application and necessary runtime files
 COPY --from=builder /app/packages/api/dist ./packages/api/dist
 COPY --from=builder /app/packages/api/prisma ./packages/api/prisma
+COPY --from=builder /app/packages/api/package.json ./packages/api/package.json
+COPY --from=builder /app/gcloud-credentials.json ./gcloud-credentials.json
 
 EXPOSE 3000
 
-# Run the application
+# The command to run the application
 CMD ["node", "packages/api/dist/main.js"]
